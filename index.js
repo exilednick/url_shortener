@@ -46,6 +46,8 @@ app.post('/short', async(req, res) => {
     const isUrlPresent = await client.get(req.body.url) //check if url already generated
 
     if(isUrlPresent) {
+        await client.set(req.body.url, isUrlPresent, 'EX', 3600) // reset timer
+        await client.set(isUrlPresent, req.body.url, 'EX', 3600)
         return res.render('url', {url: `http://localhost:5000/s/${isUrlPresent}`})
     }
     if (!isPresent) {
