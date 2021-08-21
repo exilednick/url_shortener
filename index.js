@@ -49,8 +49,8 @@ app.post('/short', async(req, res) => {
         return res.render('url', {url: `http://localhost:5000/s/${isUrlPresent}`})
     }
     if (!isPresent) {
-        await client.set(newUrl, req.body.url, 'EX', 60)    
-        await client.set(req.body.url, newUrl, 'EX', 60)
+        await client.set(newUrl, req.body.url, 'EX', 3600)    
+        await client.set(req.body.url, newUrl, 'EX', 3600)
 
         return res.render('url', {url: `http://localhost:5000/s/${newUrl}`})
     }
