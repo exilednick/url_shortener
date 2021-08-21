@@ -25,23 +25,34 @@ const makeid = async(length) => {
     return result;
 }
 
+const checkUrl = async(url) => {
+    const expression = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
+    const regex = new RegExp(expression);
+    if(url.match(regex)) {
+        return true
+    } else {
+        return false
+    }
+}
+
 app.post('/short', async(req, res) => {
-    console.log(req.body)
+    const isValid = await checkUrl(req.body.url)
+    if(!isValid) {
+        return res.status(500).send("Incorrect input")
+    }
+
     const newUrl = await makeid(8) //generate new url
     const isPresent = await client.get(newUrl) //check collision for random id
     const isUrlPresent = await client.get(req.body.url) //check if url already generated
 
     if(isUrlPresent) {
-        return res.status(200).json({
-            url: `http://localhost:5000/s/${isUrlPresent}`
-        })
+        return res.render('url', {url: `http://localhost:5000/s/${isUrlPresent}`})
     }
     if (!isPresent) {
-        await client.set(newUrl, req.body.url)
-        await client.set(req.body.url, newUrl)
-        return res.status(200).json({
-            url: `http://localhost:5000/s/${newUrl}`
-        })
+        await client.set(newUrl, req.body.url, 'EX', 60)    
+        await client.set(req.body.url, newUrl, 'EX', 60)
+
+        return res.render('url', {url: `http://localhost:5000/s/${newUrl}`})
     }
 })
 
@@ -53,9 +64,8 @@ app.get('/s/:id', async(req, res) => {
     const oldUrl = await client.get(req.params.id)
 
     if(!oldUrl) {
-        return res.status(500)
+        return res.send('Your link has expired')
     }
-
 
     return res.redirect(oldUrl)
 })
